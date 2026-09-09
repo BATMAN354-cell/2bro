@@ -2,10 +2,12 @@ const {
     default: makeWASocket, 
     useMultiFileAuthState, 
     DisconnectReason, 
-    Browsers 
+    Browsers,
+    delay
 } = require('@whiskeysockets/baileys');
 const pino = require('pino');
 const express = require('express');
+const fs = require('fs');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -33,7 +35,7 @@ app.get('/', (req, res) => {
                 input { width: 100%; padding: 12px; margin: 15px 0; background: #0f172a; border: 1px solid #334155; color: #fff; border-radius: 6px; box-sizing: border-box; font-size: 16px; outline: none; }
                 button { background: #0284c7; color: white; border: none; padding: 12px; width: 100%; border-radius: 6px; font-size: 16px; cursor: pointer; font-weight: bold; }
                 button:hover { background: #0ea5e9; }
-                .code-box { background: #0f172a; border: 1px dashed #38bdf8; padding: 15px; margin-top: 20px; border-radius: 6px; font-size: 18px; color: #4ade80; font-weight: bold; word-break: break-all; }
+                .code-box { background: #0f172a; border: 1px dashed #38bdf8; padding: 15px; margin-top: 20px; border-radius: 6px; font-size: 22px; color: #4ade80; font-weight: bold; word-break: break-all; letter-spacing: 2px; }
             </style>
         </head>
         <body>
@@ -53,7 +55,7 @@ app.get('/', (req, res) => {
 
 // Handle Pairing Request from Website
 app.post('/pair', async (req, res) => {
-    const phoneNumber = req.body.phone;
+    let phoneNumber = req.body.phone.replace(/[^0-9]/g, '');
     if (!phoneNumber) {
         latestPairingCode = "Please provide a valid phone number!";
         return res.redirect('/');
@@ -65,9 +67,13 @@ app.post('/pair', async (req, res) => {
     }
 
     try {
-        let code = await globalSock.requestPairingCode(phoneNumber.trim());
-        latestPairingCode = `Your Code: ${code}`;
+        await delay(3000);
+        let code = await globalSock.requestPairingCode(phoneNumber);
+        // Format code nicely like XXXX-XXXX
+        code = code?.match(/.{1,4}/g)?.join('-') || code;
+        latestPairingCode = `${code}`;
     } catch (err) {
+        console.error("Pairing Error:", err);
         latestPairingCode = "Error generating code. Try again!";
     }
     res.redirect('/');
@@ -97,10 +103,16 @@ async function startBot() {
             console.log('Connection closed. Reconnecting...', shouldReconnect);
             if (shouldReconnect) {
                 startBot();
+            } else {
+                console.log('Session logged out. Clear auth_info to pair again.');
+                if (fs.existsSync('./auth_info')) {
+                    fs.rmSync('./auth_info', { recursive: true, force: true });
+                }
+                startBot();
             }
         } else if (connection === 'open') {
             console.log('✅ FAMOUS BATMAN X OSMANI HACKER³¹³ Bot successfully connected!');
-            latestPairingCode = "Bot Connected Successfully! 🎉";
+            latestPairingCode = "CONNECTED SUCCESSFULLY! 🎉";
         }
     });
 
@@ -144,7 +156,7 @@ async function startBot() {
 ┃ ⬡ *Group Management* (Kick, Mute, TagAll, Promote, AntiLink...)
 ┃ ⬡ *Fun & Games* (Ship, Roast, 8Ball, Anime, Dp commands...)
 ┃ ⬡ *Audio Editors* (Bass, Nightcore, Robot, Slow, Fast...)
-┃ ⬡ *Tools & Utilities* (Font styles, RemoveBG, Upscale, Remini...)
+┃ ₂ *Tools & Utilities* (Font styles, RemoveBG, Upscale, Remini...)
 ┃ ⬡ *Settings & Owner* (Sudo, AutoReact, Mode, Prefix setup...)
 ╰──────────────────────────────────────⊷
 
@@ -172,4 +184,4 @@ async function startBot() {
 }
 
 startBot();
-      
+                        
