@@ -1,0 +1,15 @@
+{
+  "name": "famous-batman-osmani-bot",
+  "version": "7.0.0",
+  "description": "WhatsApp MD Bot by FAMOUS BATMAN X OSMANI HACKER³¹³",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "dependencies": {
+    "@whiskeysockets/bailejs": "^6.7.0",
+    "express": "^4.19.2",
+    "pino": "^8.19.0",
+    "qrcode-terminal": "^0.12.0"
+  }
+}
