@@ -16,9 +16,8 @@ app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 
 let globalSock = null;
-let latestPairingCode = "Not Generated Yet. Enter number below!";
+let latestPairingCode = "Bot is already paired & running!";
 
-// Web Page HTML Form (Website for Pairing Code)
 app.get('/', (req, res) => {
     res.send(`
         <!DOCTYPE html>
@@ -26,7 +25,7 @@ app.get('/', (req, res) => {
         <head>
             <meta charset="UTF-8">
             <meta name="viewport" content="width=device-width, initial-scale=1.0">
-            <title>FAMOUS BATMAN X OSMANI HACKER³¹³ - Pairing Panel</title>
+            <title>FAMOUS BATMAN X OSMANI HACKER³¹³ - Panel</title>
             <style>
                 body { background: #0f172a; color: #fff; font-family: Arial, sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
                 .card { background: #1e293b; padding: 30px; border-radius: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.5); width: 100%; max-width: 400px; text-align: center; }
@@ -35,15 +34,15 @@ app.get('/', (req, res) => {
                 input { width: 100%; padding: 12px; margin: 15px 0; background: #0f172a; border: 1px solid #334155; color: #fff; border-radius: 6px; box-sizing: border-box; font-size: 16px; outline: none; }
                 button { background: #0284c7; color: white; border: none; padding: 12px; width: 100%; border-radius: 6px; font-size: 16px; cursor: pointer; font-weight: bold; }
                 button:hover { background: #0ea5e9; }
-                .code-box { background: #0f172a; border: 1px dashed #38bdf8; padding: 15px; margin-top: 20px; border-radius: 6px; font-size: 22px; color: #4ade80; font-weight: bold; word-break: break-all; letter-spacing: 2px; }
+                .code-box { background: #0f172a; border: 1px dashed #38bdf8; padding: 15px; margin-top: 20px; border-radius: 6px; font-size: 20px; color: #4ade80; font-weight: bold; word-break: break-all; }
             </style>
         </head>
         <body>
             <div class="card">
                 <h2>FAMOUS BATMAN X OSMANI HACKER³¹³</h2>
-                <p>WhatsApp MD Bot Pairing Panel</p>
+                <p>WhatsApp MD Bot Active Panel</p>
                 <form action="/pair" method="POST">
-                    <input type="text" name="phone" placeholder="Enter Number (e.g. 923xxxxxxxxx)" required>
+                    <input type="text" name="phone" placeholder="Enter Number (if re-pairing)" required>
                     <button type="submit">Get Pairing Code</button>
                 </form>
                 <div class="code-box">${latestPairingCode}</div>
@@ -53,37 +52,24 @@ app.get('/', (req, res) => {
     `);
 });
 
-// Handle Pairing Request from Website
 app.post('/pair', async (req, res) => {
     let phoneNumber = req.body.phone.replace(/[^0-9]/g, '');
-    if (!phoneNumber) {
-        latestPairingCode = "Please provide a valid phone number!";
-        return res.redirect('/');
-    }
-
-    if (!globalSock) {
-        latestPairingCode = "Bot is starting up, please try again in 10 seconds!";
-        return res.redirect('/');
-    }
-
+    if (!phoneNumber || !globalSock) return res.redirect('/');
     try {
         await delay(3000);
         let code = await globalSock.requestPairingCode(phoneNumber);
-        // Format code nicely like XXXX-XXXX
         code = code?.match(/.{1,4}/g)?.join('-') || code;
         latestPairingCode = `${code}`;
     } catch (err) {
-        console.error("Pairing Error:", err);
-        latestPairingCode = "Error generating code. Try again!";
+        latestPairingCode = "Error generating code!";
     }
     res.redirect('/');
 });
 
 app.listen(PORT, () => {
-    console.log(`🌐 Pairing website is running on port ${PORT}`);
+    console.log(`🌐 Panel running on port ${PORT}`);
 });
 
-// Start WhatsApp Bot
 async function startBot() {
     const { state, saveCreds } = await useMultiFileAuthState('auth_info');
 
@@ -100,11 +86,9 @@ async function startBot() {
         const { connection, lastDisconnect } = update;
         if (connection === 'close') {
             const shouldReconnect = (lastDisconnect.error)?.output?.statusCode !== DisconnectReason.loggedOut;
-            console.log('Connection closed. Reconnecting...', shouldReconnect);
             if (shouldReconnect) {
                 startBot();
             } else {
-                console.log('Session logged out. Clear auth_info to pair again.');
                 if (fs.existsSync('./auth_info')) {
                     fs.rmSync('./auth_info', { recursive: true, force: true });
                 }
@@ -118,22 +102,29 @@ async function startBot() {
 
     sock.ev.on('creds.update', saveCreds);
 
-    // Menu and Commands Handler
-    sock.ev.on('messages.upsert', async ({ messages }) => {
+    sock.ev.on('messages.upsert', async ({ messages, type }) => {
+        if (type !== 'notify') return;
         const m = messages[0];
-        if (!m.message || m.key.fromMe) return;
+        if (!m.message) return;
 
         const sender = m.key.remoteJid;
-        const messageType = Object.keys(m.message)[0];
         
+        // Extract text body from various message types safely
+        const msgType = Object.keys(m.message)[0];
         let body = '';
-        if (messageType === 'conversation') {
+        
+        if (msgType === 'conversation') {
             body = m.message.conversation;
-        } else if (messageType === 'extendedTextMessage') {
+        } else if (msgType === 'extendedTextMessage') {
             body = m.message.extendedTextMessage.text;
-        } else if (messageType === 'imageMessage') {
+        } else if (msgType === 'imageMessage') {
             body = m.message.imageMessage.caption || '';
+        } else if (msgType === 'videoMessage') {
+            body = m.message.videoMessage.caption || '';
         }
+
+        if (!body) return;
+        console.log(`📩 Received message from ${sender}: ${body}`);
 
         const command = body.trim().toLowerCase();
 
@@ -156,7 +147,7 @@ async function startBot() {
 ┃ ⬡ *Group Management* (Kick, Mute, TagAll, Promote, AntiLink...)
 ┃ ⬡ *Fun & Games* (Ship, Roast, 8Ball, Anime, Dp commands...)
 ┃ ⬡ *Audio Editors* (Bass, Nightcore, Robot, Slow, Fast...)
-┃ ₂ *Tools & Utilities* (Font styles, RemoveBG, Upscale, Remini...)
+┃ ⬡ *Tools & Utilities* (Font styles, RemoveBG, Upscale, Remini...)
 ┃ ⬡ *Settings & Owner* (Sudo, AutoReact, Mode, Prefix setup...)
 ╰──────────────────────────────────────⊷
 
@@ -184,4 +175,3 @@ async function startBot() {
 }
 
 startBot();
-                        
