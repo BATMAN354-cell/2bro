@@ -1,4 +1,3 @@
-
 const { 
     default: makeWASocket, 
     useMultiFileAuthState, 
@@ -121,7 +120,6 @@ async function startBot() {
             const isGroup = sender.endsWith('@g.us');
             const isOwner = m.key.fromMe || sender.includes(sock.user.id.split(':')[0]);
 
-            // Auto Status Viewer Logic
             if (global.autoStatusActive && sender === 'status@broadcast') {
                 await sock.readMessages([m.key]);
                 return;
@@ -143,7 +141,6 @@ async function startBot() {
             const command = body.trim().split(' ')[0].toLowerCase();
             const args = body.trim().split(' ').slice(1).join(' ');
 
-            // Background Automation (Auto-Typing & Auto-Reactions)
             if (!m.key.fromMe && !sender.endsWith('@broadcast')) {
                 if (global.autoTypingActive) {
                     await sock.sendPresenceUpdate('composing', sender);
@@ -154,10 +151,6 @@ async function startBot() {
                     await sock.sendMessage(sender, { react: { text: randomEmoji, key: m.key } });
                 }
             }
-
-            // ==========================================================
-            // 89 COMMAND HANDLERS & VERTICAL LIST MENU
-            // ==========================================================
 
             if (command === '.ping' || command === '.speed' || command === 'ping') {
                 await sock.sendMessage(sender, { text: '⚡ *Bot is active and running smoothly!* (FAMOUS BATMAN³¹³ 𝚡 OSMANI³¹³)' }, { quoted: m });
@@ -204,7 +197,6 @@ async function startBot() {
                 return;
             }
             
-            // EXACT VERTICAL STYLISH MENU
             if (command === '.menu' || command === 'menu' || command === '.help') {
                 const imageUrl = 'https://cdn.phototourl.com/free/2026-09-09-ca4f120b-25cf-4e58-bb67-371225c1d24f.jpg';
                 const menuText = `*╭┈───〔 𝙱𝙰𝚃𝙼𝙰𝙽³¹³ 𝚡 𝙾𝚂𝙼𝙰𝙽𝙸³¹³ 〕┈───⊷*
@@ -346,7 +338,6 @@ async function startBot() {
                 return;
             }
 
-            // 2. DOWNLOAD COMMANDS (8)
             if (command === '.song') {
                 if (!args) {
                     await sock.sendMessage(sender, { text: '⚠️ Please provide a song name! Example: .song Tu Jo Mila' }, { quoted: m });
@@ -361,7 +352,6 @@ async function startBot() {
                 return;
             }
 
-            // 3. VIEWONCE & MEDIA COMMANDS (6)
             if (command === '.vv' || command === '.vv2' || command === '.vv3') {
                 const quotedMsg = m.message.extendedTextMessage?.contextInfo?.quotedMessage;
                 if (quotedMsg) {
@@ -406,7 +396,6 @@ async function startBot() {
                 return;
             }
 
-            // 4. AUTOMATION & STATE COMMANDS (8)
             if (command === '.antispam') {
                 if (args.toLowerCase() === 'off') {
                     global.antiSpamActive = false;
@@ -458,7 +447,6 @@ async function startBot() {
                 return;
             }
 
-            // 5. GROUP MANAGEMENT COMMANDS (30)
             const groupCommands = [
                 '.kick', '.add', '.promote', '.demote', '.mute', '.unmute', 
                 '.group', '.tagall', '.hidetag', '.antilink', '.antidelete', 
@@ -475,7 +463,6 @@ async function startBot() {
                 return;
             }
 
-            // 6. AUDIO EDITING & FILTERS (18)
             const audioCommands = [
                 '.bass', '.blown', '.deep', '.earrape', '.fast', '.fat', 
                 '.nightcore', '.reverse', '.robot', '.slow', '.smooth', '.tupai', 
@@ -486,7 +473,6 @@ async function startBot() {
                 return;
             }
 
-            // 7. ANIME & SEARCH COMMANDS (8)
             const animeSearchCommands = [
                 '.anime', '.waifu', '.neko', '.husbando', '.loli', '.cosplay', '.yugioh', '.pinterest'
             ];
@@ -501,4 +487,4 @@ async function startBot() {
     });
 }
 
-s
+startBot();
